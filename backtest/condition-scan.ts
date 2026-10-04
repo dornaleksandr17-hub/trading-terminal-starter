@@ -280,7 +280,7 @@ async function writeReport(
     if (!byPattern.has(r.pattern)) byPattern.set(r.pattern, []);
     byPattern.get(r.pattern)!.push(r);
   }
-  L.push('## Итог по стратегиям', '', '| Стратегия | Срезов оценено | В диапазоне 53–56% | из них LB>50% | Выше безубыточности | Holm-значимых | Стабильных (≥75% фолдов >50%) | Итог |', '|---|---|---|---|---|---|---|---|');
+  L.push('## Итог по стратегиям', '', '| Стратегия | Срезов оценено | В диапазоне 53–56% | из них LB>50% | Выше безубыточности | Holm-значимых | LB выше дрейфа | Стабильных (≥75% фолдов >50%) | Итог |', '|---|---|---|---|---|---|---|---|---|');
   for (const [pat, rs] of byPattern) {
     const ev = rs.filter((r) => r.status === 'evaluated');
     const tgt = ev.filter((r) => r.inTargetRange);
@@ -288,8 +288,9 @@ async function writeReport(
     const be = ev.filter((r) => r.aboveBreakeven);
     const holm = ev.filter((r) => r.holmSignificant);
     const st = ev.filter((r) => r.stable);
-    const verdict = ev.length === 0 ? 'недостаточно данных' : holm.length > 0 || tgtLb.length > 0 ? 'найдено (проверить форвардом)' : 'не найдено';
-    L.push(`| ${pat} | ${ev.length} | ${tgt.length} | ${tgtLb.length} | ${be.length} | ${holm.length} | ${st.length} | ${verdict} |`);
+    const bd = ev.filter((r) => r.beatsDrift);
+    const verdict = ev.length === 0 ? 'недостаточно данных' : bd.length > 0 ? 'найдено (проверить форвардом)' : holm.length > 0 || tgtLb.length > 0 ? 'только относительно 50% — объясняется дрейфом' : 'не найдено';
+    L.push(`| ${pat} | ${ev.length} | ${tgt.length} | ${tgtLb.length} | ${be.length} | ${holm.length} | ${bd.length} | ${st.length} | ${verdict} |`);
   }
 
   for (const [pat, rs] of byPattern) {
@@ -299,14 +300,15 @@ async function writeReport(
       L.push('Недостаточно данных: ни один срез не набрал 200 независимых test-исходов.');
       continue;
     }
-    L.push('Топ-15 срезов по test-точности (все оценённые — в JSON):', '', '| Срез | Незав. n | Test решено | Test acc | Wilson LB | p | Holm | Фолды отобр./>50% | Пометки |', '|---|---|---|---|---|---|---|---|---|');
+    L.push('Топ-15 срезов по test-точности (все оценённые — в JSON):', '', '| Срез | Незав. n | Test решено | Test acc | Wilson LB | Дрейф | p | Holm | Фолды отобр./>50% | Пометки |', '|---|---|---|---|---|---|---|---|---|---|');
     for (const r of ev.slice(0, 15)) {
       const marks = [
         r.inTargetRange ? ((r.wilsonLB ?? 0) > 0.5 ? 'в диапазоне' : 'в диапазоне, LB≤50% (шум)') : '',
         r.aboveBreakeven ? 'выше безубыточности' : '',
+        r.beatsDrift ? 'LB выше дрейфа' : 'не лучше дрейфа',
         r.stable ? 'стабильно' : '',
       ].filter(Boolean).join('; ');
-      L.push(`| ${r.slice} | ${r.independentCount} | ${r.testDecided} | ${pct(r.testAccuracy)} | ${pct(r.wilsonLB)} | ${r.pValue?.toExponential(2) ?? '—'} | ${r.holmSignificant ? 'да' : 'нет'} | ${r.foldsSelected}/${r.foldsPositive} | ${marks} |`);
+      L.push(`| ${r.slice} | ${r.independentCount} | ${r.testDecided} | ${pct(r.testAccuracy)} | ${pct(r.wilsonLB)} | ${pct(r.driftBaseline)} | ${r.pValue?.toExponential(2) ?? '—'} | ${r.holmSignificant ? 'да' : 'нет'} | ${r.foldsSelected}/${r.foldsPositive} | ${marks} |`);
     }
   }
   await writeFile(`${base}.md`, L.join('\n') + '\n');

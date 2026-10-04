@@ -19,8 +19,8 @@
 
 import { wilsonLowerBound } from '@/lib/wilson';
 import { binomialSignificanceTest } from './significance';
-import { holmStepDown } from './horizon-verdict';
-import { accuracyForExpiry, selectBestExpiry, type Occurrence } from './horizon-audit';
+import { holmStepDown, driftBaselineFromCounts } from './horizon-verdict';
+import { accuracyForExpiry, selectBestExpiry, tallyDrift, type Occurrence } from './horizon-audit';
 import type { FoldBoundary } from './horizon-partitioning';
 
 /** Признаки одного наблюдения: имя признака → метка бакета. */
@@ -142,6 +142,10 @@ export interface SliceResult {
   testWins: number;
   testAccuracy: number | null;
   wilsonLB: number | null;
+  /** Точность случайного направления с тем же buy/sell-миксом на тех же test-барах (рыночный дрейф). */
+  driftBaseline: number | null;
+  /** Wilson LB выше дрейф-baseline. */
+  beatsDrift: boolean;
   pValue: number | null;
   holmSignificant: boolean | null;
   inTargetRange: boolean;
@@ -162,6 +166,7 @@ export function evaluateSlice(
   let foldsEvaluated = 0;
   let foldsSelected = 0;
   let foldsPositive = 0;
+  const drift = { decided: 0, rises: 0, buys: 0 };
   for (let k = 1; k < p.foldBoundaries.length; k++) {
     const cutoff = p.foldBoundaries[k].start - p.purgeSeconds;
     const train = sliceOccs.filter((o) => o.fold < k && o.time <= cutoff);
@@ -176,11 +181,17 @@ export function evaluateSlice(
     const t = accuracyForExpiry(test, best.bestExpiry);
     wins += t.wins;
     decided += t.decided;
+    const d = tallyDrift(test, best.bestExpiry);
+    drift.decided += d.decided;
+    drift.rises += d.rises;
+    drift.buys += d.buys;
     if (t.decided > 0 && t.wins / t.decided > 0.5) foldsPositive++;
   }
   const acc = decided > 0 ? wins / decided : null;
   const enough = decided >= p.minTestDecided;
   const pValue = enough ? binomialSignificanceTest(wins, decided, 0.5, p.alpha).pValue : null;
+  const driftBaseline = driftBaselineFromCounts(drift.decided, drift.rises, drift.buys);
+  const lb = decided > 0 ? wilsonLowerBound(wins, decided) : null;
   const stableNeed = Math.ceil(0.75 * (p.foldBoundaries.length - 1));
   return {
     pattern,
@@ -192,7 +203,9 @@ export function evaluateSlice(
     testDecided: decided,
     testWins: wins,
     testAccuracy: acc,
-    wilsonLB: decided > 0 ? wilsonLowerBound(wins, decided) : null,
+    wilsonLB: lb,
+    driftBaseline,
+    beatsDrift: enough && lb !== null && driftBaseline !== null && lb > driftBaseline,
     pValue,
     holmSignificant: null,
     inTargetRange: enough && acc !== null && acc >= p.targetLow && acc <= p.targetHigh,
