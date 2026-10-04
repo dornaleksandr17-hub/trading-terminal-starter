@@ -42,7 +42,8 @@ describe('condition-scan', () => {
     const a = makeOccs(2000);
     const p = params(a);
     const r1 = scanPattern('harmonic-pattern', a, ['adx', 'session'], [5, 10], p);
-    const r2 = scanPattern('harmonic-pattern', makeOccs(2000), ['adx', 'session'], [5, 10], params(makeOccs(2000)));
+    const b = makeOccs(2000);
+    const r2 = scanPattern('harmonic-pattern', b, ['adx', 'session'], [5, 10], params(b));
     expect(r1).toEqual(r2);
     expect(enumerateSlices(a, ['adx', 'session']).every((s) => s.conds.length <= 2)).toBe(true);
   });
