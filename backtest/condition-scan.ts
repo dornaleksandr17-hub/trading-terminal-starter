@@ -71,7 +71,7 @@ const BAR_SECONDS: Record<string, number> = { '1m': 60, '5m': 300, '15m': 900, '
 interface SymbolSeries {
   candles: Candle[];
   adx: (number | null)[];
-  atrRatio: (number | null)[];
+  atrRatio: (i: number) => number | null;
   ema200: (number | null)[];
   volRatio: (number | null)[];
   volumeReliable: boolean;
@@ -79,13 +79,15 @@ interface SymbolSeries {
 
 function buildSeries(candles: Candle[]): SymbolSeries {
   const atrS = atr(candles, DEFAULT_INDICATOR_CONFIG.atrPeriod);
-  const atrRatio: (number | null)[] = atrS.map((v, i) => {
+  // Лениво: медиана ATR за 500 предыдущих баров считается только на барах наблюдений.
+  const atrRatio = (i: number): number | null => {
+    const v = atrS[i];
     if (v === null || i < 500) return null;
     const hist = atrS.slice(i - 500, i).filter((x): x is number => x !== null).sort((a, b) => a - b);
     if (hist.length < 100) return null;
     const med = hist[Math.floor(hist.length / 2)];
     return med > 0 ? v / med : null;
-  });
+  };
   const vols = candles.map((c) => c.volume ?? 0);
   const volSma = sma(vols, 20);
   const volumeReliable = vols.some((v) => v > 0);
@@ -108,7 +110,7 @@ function genericFeatures(o: Occurrence, s: SymbolSeries): Record<string, string>
     session: getSessionRegime(o.time * 1000),
     hour: hourBucket(o.time),
     adx: adxBucket(s.adx[i]),
-    atr: atrRegimeBucket(s.atrRatio[i]),
+    atr: atrRegimeBucket(s.atrRatio(i)),
     volume: volumeBucket(s.volRatio[i], s.volumeReliable),
     ema200: trend,
     symbol: o.symbolId,
