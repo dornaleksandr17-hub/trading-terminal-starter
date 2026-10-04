@@ -96,7 +96,7 @@ function buildSeries(candles: Candle[]): SymbolSeries {
     adx: adx(candles, 14),
     atrRatio,
     ema200: ema(candles.map((c) => c.close), 200),
-    volRatio: vols.map((v, i) => (volSma[i] && volSma[i]! > 0 ? v / volSma[i]! : null)),
+    volRatio: vols.map((v, i) => (volSma[i] && volSma[i] > 0 ? v / volSma[i] : null)),
     volumeReliable,
   };
 }
