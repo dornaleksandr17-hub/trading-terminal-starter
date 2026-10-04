@@ -44,6 +44,9 @@ import { detectAllPatterns } from '@/compute/patterns';
 import { computeIndicatorSeriesRaw, snapshotFromSeries } from '@/compute/IndicatorAggregator';
 import { computeStructure } from '@/compute/indicators/trend-structure';
 import { calcSmartMoney } from '@/compute/indicators/smart-money';
+import { computeHtfStructure } from '@/compute/indicators/htf-structure';
+import { htfAlignment } from '@/compute/patterns/pattern-context';
+import { htfClassOf } from '@/compute/patterns/diagnostic-trace';
 import { isCrypto } from '@/data/symbols';
 
 function parseArgs() {
@@ -101,8 +104,11 @@ function buildSeries(candles: Candle[]): SymbolSeries {
   };
 }
 
-function genericFeatures(o: Occurrence, s: SymbolSeries): Record<string, string> {
+function genericFeatures(o: Occurrence, s: SymbolSeries, windowSize: number): Record<string, string> {
   const i = o.barIndex;
+  // HTF: та же computeHtfStructure на том же окне, что видит детектор (detectAllPatterns).
+  const htf = computeHtfStructure(s.candles.slice(i - windowSize + 1, i + 1), DEFAULT_INDICATOR_CONFIG.atrPeriod);
+  const htfDir = htf.trend === 'range' ? 'range' : (htf.trend === 'up') === (o.direction === 'buy') ? 'with' : 'against';
   const e = s.ema200[i];
   const close = s.candles[i].close;
   const trend = e === null ? 'n/a' : (o.direction === 'buy') === close > e ? 'with' : 'against';
@@ -116,6 +122,8 @@ function genericFeatures(o: Occurrence, s: SymbolSeries): Record<string, string>
     symbol: o.symbolId,
     direction: o.direction,
     conf: confidenceBucket(o.confidence),
+    htf: htfClassOf(htfAlignment(htf, o.direction)),
+    htfDir,
   };
 }
 
@@ -198,8 +206,8 @@ async function main() {
     const grid = HORIZON_GRIDS[pattern];
     const group = all.filter((o) => o.patternName === pattern);
     const deduped = dedupeOccurrencesPooled(group, Math.max(...grid), barSeconds);
-    const scanOccs: ScanOccurrence[] = deduped.map((o) => ({ ...o, features: genericFeatures(o, series.get(o.symbolId)!) }));
-    const featureNames = ['session', 'hour', 'adx', 'atr', 'volume', 'ema200', 'symbol', 'direction', 'conf'];
+    const scanOccs: ScanOccurrence[] = deduped.map((o) => ({ ...o, features: genericFeatures(o, series.get(o.symbolId)!, args.windowSize) }));
+    const featureNames = ['session', 'hour', 'adx', 'atr', 'volume', 'ema200', 'symbol', 'direction', 'conf', 'htf', 'htfDir'];
 
     if (pattern === 'harmonic-pattern') {
       const { matched, mismatched } = addHarmonicFeatures(scanOccs, series, activeFeatures, config, args.windowSize);
