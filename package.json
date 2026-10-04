@@ -11,7 +11,20 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "backtest": "tsx --tsconfig backtest/tsconfig.json backtest/index.ts",
+    "backtest:harmonic-audit": "tsx --tsconfig backtest/tsconfig.json backtest/harmonic-audit.ts",
+    "backtest:htf-resample-audit": "tsx --tsconfig backtest/tsconfig.json backtest/htf-resample-stability-audit.ts",
+    "backtest:horizon-audit": "tsx --tsconfig backtest/tsconfig.json backtest/horizon-audit.ts",
+    "backtest:gen-horizon-table": "tsx --tsconfig backtest/tsconfig.json backtest/generate-pattern-horizon-table.ts",
+    "backtest:gen-horizon-table:check": "tsx --tsconfig backtest/tsconfig.json backtest/generate-pattern-horizon-table.ts --check",
+    "backtest:gen-horizon-table:check:strict": "tsx --tsconfig backtest/tsconfig.json backtest/generate-pattern-horizon-table.ts --check --strict",
+    "backtest:null-audit": "tsx --tsconfig backtest/tsconfig.json backtest/null-audit.ts",
+    "backtest:microstructure-audit": "tsx --tsconfig backtest/tsconfig.json backtest/microstructure-audit.ts",
+    "backtest:continuation-audit": "tsx --tsconfig backtest/tsconfig.json backtest/continuation-audit.ts",
+    "backtest:forward-test": "tsx --tsconfig backtest/tsconfig.json backtest/forward-test.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "ci": "npm run typecheck && npm run lint && npm run test && npm run backtest:gen-horizon-table:check"
   },
   "overrides": {
     "rolldown": "1.2.1"
@@ -44,6 +57,8 @@
     "@radix-ui/react-toggle": "^1.1.10",
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
+    "@sentry/react": "^8.47.0",
+    "@supabase/supabase-js": "^2.112.0",
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/react-query": "^5.101.1",
     "@tanstack/react-router": "1.170.41",
@@ -55,6 +70,7 @@
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
+    "lightweight-charts": "^5.0.5",
     "lucide-react": "^0.575.0",
     "react": "^19.2.0",
     "react-day-picker": "^9.14.0",
@@ -68,7 +84,8 @@
     "tw-animate-css": "^1.3.4",
     "vaul": "^1.1.2",
     "vite-tsconfig-paths": "^6.0.2",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "zustand": "^5.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
@@ -88,6 +105,7 @@
     "jsdom": "^20.0.3",
     "nitro": "3.0.260603-beta",
     "prettier": "^3.7.3",
+    "tsx": "^4.19.2",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
     "vite": "8.1.5",

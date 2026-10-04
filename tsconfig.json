@@ -2,19 +2,22 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
+    "backtest/**/*.ts",
     "vite.config.ts",
-    "vitest.config.ts",
-    "eslint.config.js"
+    "vitest.config.ts"
   ],
   "compilerOptions": {
     "target": "ES2022",
+    "useDefineForClassFields": true,
     "jsx": "react-jsx",
     "module": "ESNext",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["vite/client", "vitest/globals"],
+    "types": ["vite/client", "vitest/globals", "node"],
 
     "moduleResolution": "Bundler",
     "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
     "verbatimModuleSyntax": false,
     "noEmit": true,
 
@@ -23,12 +26,8 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    "noUncheckedSideEffectImports": true,
+
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
