@@ -45,7 +45,7 @@ const {
 });
 
 vi.mock('@/decision/engine', () => ({
-  DecisionEngine: vi.fn().mockImplementation(() => ({
+  DecisionEngine: vi.fn().mockImplementation(function () { return {
     evaluate: mockEvaluate,
     onCandleClosed: mockOnCandleClosed,
     shouldEmitPreClose: mockShouldEmitPreClose,
@@ -62,17 +62,17 @@ vi.mock('@/decision/engine', () => ({
     setLossStreak: vi.fn(),
     setLossStreakGuardEnabled: vi.fn(),
     setStrongSignalsOnly: vi.fn(),
-  })),
+  }; }),
 }));
 
 vi.mock('@/decision/outcome-scheduler', () => ({
-  OutcomeScheduler: vi.fn().mockImplementation(() => ({
+  OutcomeScheduler: vi.fn().mockImplementation(function () { return {
     schedule: vi.fn(),
     onCandleClosed: vi.fn(),
     clear: vi.fn(),
     getPendingCount: vi.fn().mockReturnValue(0),
     getPendingList: vi.fn().mockReturnValue([]),
-  })),
+  }; }),
 }));
 
 vi.mock('@/decision/calibration-model', () => ({
