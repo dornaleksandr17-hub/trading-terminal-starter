@@ -282,6 +282,9 @@ describe('maybeResolveOutcomes', () => {
     const deps = makeDeps();
     const updateSpy = vi.spyOn(useAnalyticsStore.getState(), 'updateSignalOutcome');
     const recomputeSpy = vi.spyOn(useAnalyticsStore.getState(), 'recomputeStats');
+    // Vitest 4: spyOn повторно возвращает уже существующий шпион с накопленными вызовами.
+    updateSpy.mockClear();
+    recomputeSpy.mockClear();
 
     const get = () => ({ candles: [] }) as unknown as TickState;
     maybeResolveOutcomes(get, deps);

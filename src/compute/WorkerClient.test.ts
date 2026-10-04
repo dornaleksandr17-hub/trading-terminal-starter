@@ -55,7 +55,7 @@ describe('WorkerClient', () => {
   beforeEach(() => {
     mockWorker = new MockWorker();
     originalWorker = globalThis.Worker;
-    (globalThis as unknown as { Worker: unknown }).Worker = vi.fn(() => mockWorker);
+    (globalThis as unknown as { Worker: unknown }).Worker = vi.fn(function () { return mockWorker; });
     vi.resetModules();
   });
 
