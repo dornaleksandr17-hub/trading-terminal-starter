@@ -152,7 +152,7 @@ async function main() {
       continue;
     }
     const { candles: c1m } = await loadHistory({ symbol: sym, fromMs, toMs });
-    const candles = resample(c1m, args.timeframe);
+    const candles = resample(c1m, args.timeframe as Parameters<typeof resample>[1]);
     const s = buildSeries(candles);
     let misaligned = 0;
     for (const o of cached.occurrences) if (candles[o.barIndex]?.time !== o.time) misaligned++;
