@@ -15,6 +15,7 @@
     "backtest": "tsx --tsconfig backtest/tsconfig.json backtest/index.ts",
     "backtest:harmonic-audit": "tsx --tsconfig backtest/tsconfig.json backtest/harmonic-audit.ts",
     "backtest:htf-resample-audit": "tsx --tsconfig backtest/tsconfig.json backtest/htf-resample-stability-audit.ts",
+    "backtest:condition-scan": "tsx --tsconfig backtest/tsconfig.json backtest/condition-scan.ts",
     "backtest:horizon-audit": "tsx --tsconfig backtest/tsconfig.json backtest/horizon-audit.ts",
     "backtest:gen-horizon-table": "tsx --tsconfig backtest/tsconfig.json backtest/generate-pattern-horizon-table.ts",
     "backtest:gen-horizon-table:check": "tsx --tsconfig backtest/tsconfig.json backtest/generate-pattern-horizon-table.ts --check",

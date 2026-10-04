@@ -44,7 +44,7 @@ import { detectAllPatterns } from '@/compute/patterns';
 import { computeIndicatorSeriesRaw, snapshotFromSeries } from '@/compute/IndicatorAggregator';
 import { computeStructure } from '@/compute/indicators/trend-structure';
 import { calcSmartMoney } from '@/compute/indicators/smart-money';
-import { isCrypto } from '@/lib/symbols';
+import { isCrypto } from '@/data/symbols';
 
 function parseArgs() {
   const m = new Map<string, string>();
