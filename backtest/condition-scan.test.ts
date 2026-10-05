@@ -74,3 +74,14 @@ describe('condition-scan', () => {
     expect(JSON.stringify(a.map((o) => ({ ...o, outcomes: [...o.outcomes] })))).toBe(snap);
   });
 });
+
+describe('condition-scan: HTF-класс', () => {
+  it('классы совпадают с htfClassOf(htfAlignment) детекторов', async () => {
+    const { htfAlignment } = await import('@/compute/patterns/pattern-context');
+    const { htfClassOf } = await import('@/compute/patterns/diagnostic-trace');
+    const base = { trend: 'up', bos: true, choch: false } as unknown as Parameters<typeof htfAlignment>[0];
+    expect(htfClassOf(htfAlignment(base, 'buy'))).toBe('1.00-bos');
+    expect(htfClassOf(htfAlignment({ ...base, trend: 'range', bos: false }, 'buy'))).toBe('0.40-range');
+    expect(htfClassOf(htfAlignment({ ...base, trend: 'down', bos: false, choch: true }, 'buy'))).toBe('0.75-choch');
+  });
+});
