@@ -80,11 +80,7 @@ function ThreadChat({ threadId }: { threadId: string }) {
       <Conversation className="min-h-0 flex-1">
         <ConversationContent className="mx-auto w-full max-w-3xl">
           {messages.length === 0 ? (
-            <ConversationEmptyState
-              icon={<img src={logo} alt="" className="h-14 w-14" />}
-              title="Спросите об истории своих сигналов"
-              description={`В истории: ${signals.length} сигналов, из них с исходом — ${decided}. ИИ также видит итоги бэктестов. Это аналитика, а не торговые сигналы.`}
-            >
+            <ConversationEmptyState>
               <div className="mt-4 flex flex-col items-center gap-3 text-center">
                 <img src={logo} alt="" className="h-14 w-14" />
                 <h2 className="text-base font-semibold">Спросите об истории своих сигналов</h2>
