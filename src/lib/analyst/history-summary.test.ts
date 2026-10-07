@@ -10,7 +10,7 @@ function sig(p: Partial<Signal>): Signal {
     isRevised: false, isPreClose: false, revisionNote: null, barsToResolve: 1, spread: null,
     spreadSource: null, recommendedExpiry: 60, featureVector: [], factors: [], rejectedPatterns: [],
     engineConfigSnapshot: {} as Signal['engineConfigSnapshot'], chartContext: {} as Signal['chartContext'],
-    marketContext: { regime: 'trend', structure: 'bullish' as Signal['marketContext']['structure'], session: 'london' },
+    marketContext: { regime: 'trend', structure: { trend: 'up', bos: false, choch: false } as Signal['marketContext']['structure'], session: 'london' },
     ...p,
   } as Signal;
 }
@@ -35,7 +35,7 @@ describe('summarizeSignalHistory', () => {
   it('группирует по сессии и паттерну, безубыточность 55.56%', () => {
     const s = summarizeSignalHistory([
       sig({ outcome: 'win' }),
-      sig({ outcome: 'loss', pattern: null, marketContext: { regime: 'range', structure: 'bullish' as Signal['marketContext']['structure'], session: 'tokyo' } }),
+      sig({ outcome: 'loss', pattern: null, marketContext: { regime: 'range', structure: { trend: 'up', bos: false, choch: false } as Signal['marketContext']['structure'], session: 'tokyo' } }),
     ]);
     expect(s.bySession.map((g) => g.key).sort()).toEqual(['london', 'tokyo']);
     expect(s.byPattern.find((g) => g.key === 'без паттерна')?.decided).toBe(1);

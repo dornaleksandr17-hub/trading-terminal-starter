@@ -140,7 +140,7 @@ function ThreadChat({ threadId }: { threadId: string }) {
             placeholder="Например: почему падает винрейт на EURUSD в лондонскую сессию?"
           />
           <PromptInputFooter className="justify-end">
-            <PromptInputSubmit status={status} onStop={stop} disabled={!busy && !input.trim()} />
+            <PromptInputSubmit status={status} onStop={() => void stop()} disabled={!busy && !input.trim()} />
           </PromptInputFooter>
         </PromptInput>
         <p className="mt-1.5 text-center text-[10px] text-muted-foreground">

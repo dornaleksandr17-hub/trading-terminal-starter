@@ -36,7 +36,7 @@ function useThreads() {
 function AnalystLayout() {
   const threads = useThreads();
   const navigate = useNavigate();
-  const params = useParams({ strict: false }) as { threadId?: string };
+  const params = useParams({ strict: false });
 
   const onNew = () => {
     const t = createThread();

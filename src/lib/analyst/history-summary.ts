@@ -91,6 +91,12 @@ function group(signals: Signal[], keyOf: (s: Signal) => string | string[] | null
     .sort((a, b) => b.decided - a.decided);
 }
 
+function structureKey(s: Signal): string | null {
+  const st = s.marketContext?.structure;
+  if (!st) return null;
+  return `${st.trend}${st.bos ? '+bos' : ''}${st.choch ? '+choch' : ''}`;
+}
+
 function probBucket(p: number | null): string | null {
   if (p == null || !Number.isFinite(p)) return null;
   const lo = Math.min(9, Math.max(0, Math.floor(p * 10)));
@@ -123,7 +129,7 @@ export function summarizeSignalHistory(signals: Signal[], recentLimit = 120): Hi
     byStrength: group(signals, (s) => s.strength),
     bySession: group(signals, (s) => s.marketContext?.session ?? null),
     byRegime: group(signals, (s) => s.marketContext?.regime ?? null),
-    byStructure: group(signals, (s) => (s.marketContext?.structure as string | undefined) ?? null),
+    byStructure: group(signals, (s) => structureKey(s)),
     byTimeframe: group(signals, (s) => s.timeframe),
     byHourUtc: group(signals, (s) => String(new Date(s.time < 1e12 ? s.time * 1000 : s.time).getUTCHours()).padStart(2, '0')),
     byProbabilityBucket: group(signals, (s) => probBucket(s.calibratedProbability)),
@@ -141,7 +147,7 @@ export function summarizeSignalHistory(signals: Signal[], recentLimit = 120): Hi
       expiryBars: s.expiryBars ?? 1,
       session: s.marketContext?.session ?? null,
       regime: s.marketContext?.regime ?? null,
-      structure: (s.marketContext?.structure as string | undefined) ?? null,
+      structure: structureKey(s),
       topFactors: [...(s.factors ?? [])]
         .sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution))
         .slice(0, 4)
