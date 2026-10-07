@@ -10,12 +10,24 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AnalystRouteImport } from './routes/analyst'
+import { Route as AnalystIndexRouteImport } from './routes/analyst.index'
 import { Route as ApiAnalystRouteImport } from './routes/api/analyst'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AnalystRoute = AnalystRouteImport.update({
+  id: '/analyst',
+  path: '/analyst',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnalystIndexRoute = AnalystIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AnalystRoute,
 } as any)
 const ApiAnalystRoute = ApiAnalystRouteImport.update({
   id: '/api/analyst',
@@ -25,27 +37,33 @@ const ApiAnalystRoute = ApiAnalystRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/analyst': typeof AnalystRouteWithChildren
   '/api/analyst': typeof ApiAnalystRoute
+  '/analyst/': typeof AnalystIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/analyst': typeof ApiAnalystRoute
+  '/analyst': typeof AnalystIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/analyst': typeof AnalystRouteWithChildren
   '/api/analyst': typeof ApiAnalystRoute
+  '/analyst/': typeof AnalystIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/analyst'
+  fullPaths: '/' | '/analyst' | '/api/analyst' | '/analyst/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/analyst'
-  id: '__root__' | '/' | '/api/analyst'
+  to: '/' | '/api/analyst' | '/analyst'
+  id: '__root__' | '/' | '/analyst' | '/api/analyst' | '/analyst/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnalystRoute: typeof AnalystRouteWithChildren
   ApiAnalystRoute: typeof ApiAnalystRoute
 }
 
@@ -58,6 +76,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/analyst': {
+      id: '/analyst'
+      path: '/analyst'
+      fullPath: '/analyst'
+      preLoaderRoute: typeof AnalystRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/analyst/': {
+      id: '/analyst/'
+      path: '/'
+      fullPath: '/analyst/'
+      preLoaderRoute: typeof AnalystIndexRouteImport
+      parentRoute: typeof AnalystRoute
+    }
     '/api/analyst': {
       id: '/api/analyst'
       path: '/api/analyst'
@@ -68,8 +100,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AnalystRouteChildren {
+  AnalystIndexRoute: typeof AnalystIndexRoute
+}
+
+const AnalystRouteChildren: AnalystRouteChildren = {
+  AnalystIndexRoute: AnalystIndexRoute,
+}
+
+const AnalystRouteWithChildren =
+  AnalystRoute._addFileChildren(AnalystRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnalystRoute: AnalystRouteWithChildren,
   ApiAnalystRoute: ApiAnalystRoute,
 }
 export const routeTree = rootRouteImport
