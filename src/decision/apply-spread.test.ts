@@ -33,12 +33,12 @@ function makeSignal(overrides: Partial<Signal> & { id: string }): Signal {
 }
 
 describe('applySpreadToOutcome', () => {
-  it('downgrades a win to timeout when the price move does not exceed the spread', () => {
+  it('keeps a win even when the price move does not exceed the spread (timeout only on open === close)', () => {
     const signal = makeSignal({ id: 'sig-1', entryPrice: 100 });
-    // Close moved only 0.4 above entry; spread is 0.5 — move <= spread.
+    // Close moved only 0.4 above entry; spread is 0.5 — раньше это был 'timeout'.
     const result = applySpreadToOutcome('win', signal, 0.5, 100.4);
 
-    expect(result.outcome).toBe('timeout');
+    expect(result.outcome).toBe('win');
   });
 
   it('keeps a win when the price move exceeds the spread', () => {
@@ -83,10 +83,10 @@ describe('applySpreadToOutcome', () => {
     expect(result.spreadCostR).toBe(0);
   });
 
-  it('treats a move exactly equal to the spread as a downgrade (boundary, move <= spread)', () => {
+  it('does not downgrade a win when the move equals the spread (boundary no longer creates timeout)', () => {
     const signal = makeSignal({ id: 'sig-8', entryPrice: 100 });
     const result = applySpreadToOutcome('win', signal, 0.5, 100.5);
 
-    expect(result.outcome).toBe('timeout');
+    expect(result.outcome).toBe('win');
   });
 });

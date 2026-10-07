@@ -38,8 +38,10 @@ function makeSignal(overrides: Partial<Signal> & { id: string; time: number }): 
   };
 }
 
-function candle(time: number, close: number): Candle {
-  return { time, open: close, high: close, low: close, close, volume: 100 };
+// open по умолчанию = 100 (entryPrice сигналов в тестах): точка отсчёта исхода —
+// open свечи входа, тайм-аут только при open === close (правило владельца, 2026-10).
+function candle(time: number, close: number, open = 100): Candle {
+  return { time, open, high: Math.max(open, close), low: Math.min(open, close), close, volume: 100 };
 }
 
 function makeDeps(recordOutcome = vi.fn().mockReturnValue(null)): OutcomeDeps & {

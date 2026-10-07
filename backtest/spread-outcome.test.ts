@@ -1,39 +1,32 @@
 import { describe, expect, it } from 'vitest';
 import { resolveBinaryOutcome } from './horizon-audit';
 
-// BUGFIX (Фаза 3, "модель спреда для бинарного контракта"): раньше исход
-// определялся сравнением close entry/expiry напрямую — тай засчитывался
-// ТОЛЬКО при точном равенстве цен, чего на реальных котировках почти
-// никогда не бывает. Живой/демо-путь (src/decision/apply-spread.ts::
-// applySpreadToOutcome) считает тай при move <= spread. Этот тест
-// воспроизводит расхождение: движение внутри спреда должно резолвиться
-// как тай (0), а не как решённая победа/поражение.
-describe('resolveBinaryOutcome — spread tie-zone (Фаза 3)', () => {
-  it('move smaller than spread resolves as tie, not a decided win', () => {
-    // buy, close вырос на 0.00005 при spread=0.00008 (EURUSD-подобный) —
-    // движение не перекрывает спред: по факту реального выигрыша нет.
-    expect(resolveBinaryOutcome(1.1000, 1.10005, 'buy', 0.00008)).toBe(0);
+// Правило тайм-аута (решение владельца, 2026-10): тай (0) — ТОЛЬКО при точном
+// равенстве цены открытия свечи входа и цены закрытия свечи экспирации.
+// Любое другое значение — win/loss по направлению; спред исход не меняет
+// (раньше движение <= спред резолвилось как тай).
+describe('resolveBinaryOutcome — тай только при open === close', () => {
+  it('tiny move (внутри бывшей зоны спреда) — это win для buy, а не тай', () => {
+    expect(resolveBinaryOutcome(1.1000, 1.10005, 'buy')).toBe(1);
   });
 
-  it('move exactly equal to spread resolves as tie (boundary, inclusive)', () => {
-    expect(resolveBinaryOutcome(1.1000, 1.10008, 'buy', 0.00008)).toBe(0);
+  it('tiny move против направления — это loss, а не тай', () => {
+    expect(resolveBinaryOutcome(1.1000, 1.09995, 'buy')).toBe(-1);
+    expect(resolveBinaryOutcome(1.1000, 1.10005, 'sell')).toBe(-1);
   });
 
-  it('move larger than spread resolves as a decided win for buy', () => {
-    expect(resolveBinaryOutcome(1.1000, 1.1010, 'buy', 0.00008)).toBe(1);
+  it('точное равенство цен — тай (0) для обоих направлений', () => {
+    expect(resolveBinaryOutcome(1.1000, 1.1000, 'buy')).toBe(0);
+    expect(resolveBinaryOutcome(1.1000, 1.1000, 'sell')).toBe(0);
   });
 
-  it('move larger than spread resolves as a decided loss for buy (price fell)', () => {
-    expect(resolveBinaryOutcome(1.1000, 1.0990, 'buy', 0.00008)).toBe(-1);
+  it('buy: рост — win, падение — loss', () => {
+    expect(resolveBinaryOutcome(1.1000, 1.1010, 'buy')).toBe(1);
+    expect(resolveBinaryOutcome(1.1000, 1.0990, 'buy')).toBe(-1);
   });
 
-  it('sell direction is mirrored: price falling beyond spread is a win', () => {
-    expect(resolveBinaryOutcome(1.1000, 1.0990, 'sell', 0.00008)).toBe(1);
-    expect(resolveBinaryOutcome(1.1000, 1.1010, 'sell', 0.00008)).toBe(-1);
-  });
-
-  it('zero spread (symbol not in the static table) falls back to old exact-equality behaviour', () => {
-    expect(resolveBinaryOutcome(1.1000, 1.1000, 'buy', 0)).toBe(0);
-    expect(resolveBinaryOutcome(1.1000, 1.10001, 'buy', 0)).toBe(1);
+  it('sell зеркален: падение — win, рост — loss', () => {
+    expect(resolveBinaryOutcome(1.1000, 1.0990, 'sell')).toBe(1);
+    expect(resolveBinaryOutcome(1.1000, 1.1010, 'sell')).toBe(-1);
   });
 });

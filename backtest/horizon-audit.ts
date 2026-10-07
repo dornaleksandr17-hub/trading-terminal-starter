@@ -70,7 +70,6 @@ import { computeIndicatorSeriesRaw, snapshotFromSeries } from '@/compute/Indicat
 import { readCache, writeCache, type CacheKey } from './occurrence-cache';
 import { computeStructure } from '@/compute/indicators/trend-structure';
 import { calcSmartMoney } from '@/compute/indicators/smart-money';
-import { estimateSpread } from '@/decision/spread-estimate';
 import { timeframeSchema, ALL_FEATURES, DEFAULT_INDICATOR_CONFIG, patternNameSchema } from '@/types/domain';
 import type { Candle, Timeframe, PatternName, SignalDirection, FeatureName } from '@/types/domain';
 
@@ -404,20 +403,18 @@ export interface PoolMeta {
 // ОБЯЗАНО сопровождаться инкрементом.
 
 
-// Извлечено из тела buildOccurrences (Фаза 3, "модель спреда") — чистая
-// функция, зеркальная src/decision/apply-spread.ts::applySpreadToOutcome,
-// но возвращающая доменную модель backtest'а (1/-1/0), а не
-// SignalOutcome/'timeout'. move <= spread → тай (0), как и в живом/демо-пути
-// (см. BUGFIX-комментарий у вызова estimateSpread() в buildOccurrences ниже).
+// Чистая функция разметки исхода для backtest'а (доменная модель 1/-1/0).
+// Правило тайм-аута (решение владельца, 2026-10): тай (0) — ТОЛЬКО при
+// точном равенстве цены открытия свечи входа и цены закрытия свечи
+// экспирации. Любое другое значение — win (1) или loss (-1) по направлению;
+// спред исход не меняет (раньше move <= spread → тай).
 export function resolveBinaryOutcome(
-  entryClose: number,
+  entryPrice: number,
   expiryClose: number,
   direction: SignalDirection,
-  spread: number,
 ): number {
-  const move = Math.abs(expiryClose - entryClose);
-  if (move <= spread) return 0;
-  const win = direction === 'buy' ? expiryClose > entryClose : expiryClose < entryClose;
+  if (expiryClose === entryPrice) return 0;
+  const win = direction === 'buy' ? expiryClose > entryPrice : expiryClose < entryPrice;
   return win ? 1 : -1;
 }
 
@@ -456,21 +453,6 @@ export function buildOccurrences(
   // 24/7, а getSessionRegime() размечает 'closed'/'sydney'/'tokyo' по
   // форекс-календарю. См. PatternContext.sessionAgnostic в pattern-context.ts.
   const sessionAgnostic = isCrypto(symbolId);
-  // BUGFIX (Фаза 3, "модель спреда для бинарного контракта"): раньше исход
-  // здесь считался по голому знаку разницы close (тай — только при
-  // ТОЧНОМ равенстве цен, что на реальных котировках почти никогда не
-  // случается). Живой/демо-путь (src/decision/apply-spread.ts::
-  // applySpreadToOutcome, src/stores/useDemoAccountStore.ts::resolveTrade)
-  // считает тай при move <= spread — движение цены, не перекрывающее
-  // спред, не даёт реального выигрыша по бинарному контракту. Backtest,
-  // не моделируя эту зону тай, системно завышал число "решённых" исходов
-  // и, как следствие, точность/значимость паттернов относительно того, что
-  // реально выплатит брокер. Здесь используется тот же estimateSpread()
-  // (со static-таблицей спредов, без live-тика — как в backtest и должно
-  // быть), что и в реальном приложении, чтобы цифры аудита были сравнимы
-  // с реальной выплатой по бинарному опциону, а не только с "движением
-  // в нужную сторону".
-  const spread = estimateSpread(symbolId, null).spread;
 
   for (let i = minStart; i < candles.length - maxExpiry; i++) {
     const progressIdx = i - minStart;
@@ -502,6 +484,9 @@ export function buildOccurrences(
     );
 
     const entryCandle = candles[i];
+    // Цена входа — open свечи входа (следующая за сигнальной), как у
+    // демо-сделки; expiry=k → закрытие свечи i+k (см. outcome-scheduler.ts).
+    const entryPrice = candles[i + 1].open;
 
     if (ungatedSink) {
       for (const u of drainUngatedCandidates()) {
@@ -513,7 +498,7 @@ export function buildOccurrences(
             outcomes.set(expiry, 0);
             continue;
           }
-          outcomes.set(expiry, resolveBinaryOutcome(entryCandle.close, candles[i + expiry].close, u.direction, spread));
+          outcomes.set(expiry, resolveBinaryOutcome(entryPrice, candles[i + expiry].close, u.direction));
         }
         ungatedSink.push({
           patternName: u.name,
@@ -540,7 +525,7 @@ export function buildOccurrences(
           continue;
         }
         const expiryCandle = candles[i + expiry];
-        outcomes.set(expiry, resolveBinaryOutcome(entryCandle.close, expiryCandle.close, p.direction, spread));
+        outcomes.set(expiry, resolveBinaryOutcome(entryPrice, expiryCandle.close, p.direction));
       }
 
       occurrences.push({

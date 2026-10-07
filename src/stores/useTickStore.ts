@@ -26,7 +26,6 @@ import {
   saveSignal,
   loadCalibrationStateFromDb,
   saveCalibrationState,
-  updateSignalOutcome,
 } from '@/lib/signal-persistence';
 import { useDemoAccountStore } from '@/stores/useDemoAccountStore';
 import { getActiveFeatures, notifySignal } from './tick-store/shared';
@@ -324,26 +323,6 @@ function outcomeDeps() {
   };
 }
 
-function resolvePendingAsTimeout(): void {
-  if (!outcomeScheduler) return;
-  const analytics = useAnalyticsStore.getState();
-  for (const p of outcomeScheduler.getPendingList()) {
-    const sig = p.signal;
-    // Аудит (синхронизация с демо-счётом): сигналы, по которым уже открыта
-    // демо-сделка, здесь принудительно НЕ тайм-аутим — их финальный outcome
-    // обязана выставить useDemoAccountStore в момент реального закрытия
-    // сделки (сейчас или позже, через resolveFromHistory при повторном
-    // заходе на этот инструмент). Форсированный тайм-аут здесь для них
-    // воссоздал бы тот же двойной источник исхода, который и был причиной
-    // бага — реальная сделка потом придёт со своим (возможно другим)
-    // результатом и перезапишет уже показанный пользователю "Тайм-аут".
-    if (sig.tradeOpened) continue;
-    analytics.updateSignalOutcome(sig.id, 'timeout');
-    void updateSignalOutcome(sig.id, 'timeout');
-  }
-  analytics.recomputeStats();
-}
-
 export const useTickStore = create<TickState>((set, get) => ({
   candles: [],
   currentPrice: null,
@@ -390,7 +369,10 @@ export const useTickStore = create<TickState>((set, get) => ({
       lastCandleCloseAtMs: 0,
       candleLifecycle: 'live',
     });
-    resolvePendingAsTimeout();
+    // Правило тайм-аута (решение владельца, 2026-10): незакрытые сигналы при
+    // смене инструмента НЕ помечаются 'timeout' — тайм-аут бывает только при
+    // open === close. Они остаются 'pending' и досчитываются по реальным
+    // свечам при возврате на этот инструмент/таймфрейм (см. reseed ниже).
     useAnalyticsStore.getState().resetSession();
     resetPreCloseTriggeredCandleTime();
 
@@ -409,9 +391,8 @@ export const useTickStore = create<TickState>((set, get) => ({
     // БЕЗ персистентности, и .clear() выше в любом случае обнуляет его
     // pending-очередь на каждый start(). Без реseed-а ниже любой сигнал,
     // который был 'pending' на момент перезагрузки страницы (или всё ещё
-    // 'pending' для того же symbolId/timeframe после resolvePendingAsTimeout,
-    // который финализирует только то, что действительно было в СТАРОМ
-    // scheduler'е), навсегда завис бы без исхода — это и есть "некоторые
+    // 'pending' для того же symbolId/timeframe, оставшийся в истории после
+    // очистки scheduler'а), навсегда завис бы без исхода — это и есть "некоторые
     // сигналы не получают статус, из-за чего статистика неверна".
     // Планировщик заново заполняется PENDING-сигналами именно из
     // восстановленной истории для целевого symbolId/timeframe: onCandleClosed

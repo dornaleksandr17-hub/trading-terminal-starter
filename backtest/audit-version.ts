@@ -99,8 +99,13 @@
  *     fvg-sweep-return, fvg-inversion-retest. Новые имена паттернов дают новые
  *     occurrences и меняют набор HORIZON_GRIDS/ALL_FEATURES, поэтому кэш
  *     версии 17 не содержал бы их результатов.
+ * 19 — правило тайм-аута (решение владельца, 2026-10): тай (0) только при
+ *     точном равенстве open свечи входа и close свечи экспирации; вход
+ *     считается от open свечи i+1, а не от close свечи i; зона «move <=
+ *     spread → тай» убрана (resolveBinaryOutcome). Меняет разметку исходов
+ *     всех occurrences, поэтому кэш версии 18 отдавал бы прежние исходы.
  */
-export const OCCURRENCE_ALGORITHM_VERSION = 18;
+export const OCCURRENCE_ALGORITHM_VERSION = 19;
 
 /**
  * Версия СХЕМЫ выходного JSON horizon-audit.

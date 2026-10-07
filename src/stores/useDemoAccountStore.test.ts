@@ -174,14 +174,10 @@ describe('useDemoAccountStore — martingale stages', () => {
   });
 });
 
-// BUGFIX (аудит 2026-09-13, "спред учтён в калибровке, но не в балансе"):
-// decision/apply-spread.ts уже давно переразмечает пограничный 'win' (движение
-// цены не превышает спред) в 'timeout' для калибровочной модели — но баланс
-// демо-счёта раньше игнорировал спред полностью и засчитывал такой же
-// пограничный win как полноценную победу с payout. Тесты ниже фиксируют
-// исправленное поведение: resolveTrade() теперь применяет ту же спред-логику
-// к самому балансу, а не только к обучающей метке калибровки.
-describe('useDemoAccountStore — spread-aware settlement (balance/calibration parity fix)', () => {
+// Правило тайм-аута (решение владельца, 2026-10): тай/тайм-аут — ТОЛЬКО при
+// точном равенстве цены входа и цены закрытия. Спред исход не меняет: любое
+// ненулевое движение в сторону сделки — полноценный win, против — loss.
+describe('useDemoAccountStore — spread does not create ties (timeout only on exact equality)', () => {
   beforeEach(() => {
     useDemoAccountStore.getState().resetAccount();
     useDemoAccountStore.setState({
@@ -194,7 +190,7 @@ describe('useDemoAccountStore — spread-aware settlement (balance/calibration p
     });
   });
 
-  it('a win whose move does not exceed the trade spread is settled as a push (tie), not a win', () => {
+  it('a win whose move does not exceed the trade spread is still a full win (no tie)', () => {
     const candleTime = 100000;
     // Вход 100, спред 2 — движение до 101 (buy) полностью в пределах спреда.
     useDemoAccountStore.setState({
@@ -208,13 +204,30 @@ describe('useDemoAccountStore — spread-aware settlement (balance/calibration p
     useDemoAccountStore.getState().checkExpiries(101, (candleTime + TF_SECONDS) * 1000, 'EURUSD', TF);
 
     const state = useDemoAccountStore.getState();
+    expect(state.history[0].outcome).toBe('win');
+    expect(state.history[0].pnl).toBe(20); // 25 * 0.8
+    expect(state.balance).toBe(1035); // 990 + 25 stake back + 20 profit
+    expect(state.martingale['EURUSD:5m'].stage).toBe(0);
+    expect(state.history[0].seriesReset).toBe('win');
+  });
+
+  it('exact equality of entry and close is a tie even when the trade has a spread', () => {
+    const candleTime = 100000;
+    useDemoAccountStore.setState({
+      balance: 990,
+      martingale: { 'EURUSD:5m': { stage: 1, halted: false } },
+      openTrades: {
+        'sig-exact-tie': makeTrade('sig-exact-tie', 'EURUSD', TF, candleTime, 25, 1, 'buy', 100, 2),
+      },
+    });
+
+    useDemoAccountStore.getState().checkExpiries(100, (candleTime + TF_SECONDS) * 1000, 'EURUSD', TF);
+
+    const state = useDemoAccountStore.getState();
     expect(state.history[0].outcome).toBe('tie');
     expect(state.history[0].pnl).toBe(0);
-    // Ставка возвращена, payout не начислен.
-    expect(state.balance).toBe(1015); // 990 + 25 (только ставка назад)
-    // Серия мартингейла не двигается — как обычный тай.
+    expect(state.balance).toBe(1015); // ставка возвращена
     expect(state.martingale['EURUSD:5m'].stage).toBe(1);
-    expect(state.history[0].seriesReset).toBeNull();
   });
 
   it('a win whose move clearly exceeds the trade spread still pays out normally', () => {
@@ -238,7 +251,7 @@ describe('useDemoAccountStore — spread-aware settlement (balance/calibration p
     expect(state.history[0].seriesReset).toBe('win');
   });
 
-  it('a loss is unaffected by spread — spread only demotes marginal wins, never softens losses', () => {
+  it('a loss is unaffected by spread', () => {
     const candleTime = 100000;
     // Вход 100, спред 2 — движение до 99 (buy = убыток) внутри "спреда", но
     // это направление против сделки: остаётся полноценным убытком.
@@ -268,8 +281,7 @@ describe('useDemoAccountStore — spread-aware settlement (balance/calibration p
       },
     });
 
-    // Движение всего +0.5 — при известном спреде 2 это был бы 'tie', но
-    // спред здесь не оценён (null), поэтому это полноценный win.
+    // Движение всего +0.5 — спред исход не меняет: полноценный win.
     useDemoAccountStore.getState().checkExpiries(100.5, (candleTime + TF_SECONDS) * 1000, 'EURUSD', TF);
 
     const state = useDemoAccountStore.getState();

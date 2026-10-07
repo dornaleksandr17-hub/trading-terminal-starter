@@ -17,8 +17,11 @@ function makeSignal(overrides: Partial<Signal> & { id: string; time: number }): 
   };
 }
 
-function candle(time: number, close: number, high: number, low: number): Candle {
-  return { time, open: close, high, low, close, volume: 100 };
+// open по умолчанию = 100 (как entryPrice в makeSignal/тестах ниже): точкой
+// отсчёта исхода служит open свечи входа (первая свеча после сигнальной), а
+// тайм-аут — только при open === close (правило владельца, 2026-10).
+function candle(time: number, close: number, high: number, low: number, open = 100): Candle {
+  return { time, open, high, low, close, volume: 100 };
 }
 
 describe('OutcomeScheduler.schedule — dedup by signal.id', () => {
@@ -197,6 +200,37 @@ describe('resolveOutcome — только close на expiryBars vs entryPrice, �
     const resolved = resolveOutcome(signal, candlesAfter);
 
     expect(resolved).toEqual({ signalId: 'A:5m:1000', outcome: 'timeout' });
+  });
+
+  it('отсчёт идёт от open свечи входа, а не от signal.entryPrice: open 105 → close 104 для buy это loss', () => {
+    const signal = makeSignal({
+      id: 'A:5m:1000', time: 1000, direction: 'buy',
+      entryPrice: 100, barsToResolve: 5,
+    });
+    // close 104 > signal.entryPrice (100), но < open свечи входа (105).
+    const candlesAfter = [candle(1300, 104, 106, 103, 105)];
+
+    expect(resolveOutcome(signal, candlesAfter)).toEqual({ signalId: 'A:5m:1000', outcome: 'loss' });
+  });
+
+  it('тайм-аут — при open === close, даже если оба отличаются от signal.entryPrice', () => {
+    const signal = makeSignal({
+      id: 'A:5m:1000', time: 1000, direction: 'sell',
+      entryPrice: 100, barsToResolve: 5,
+    });
+    const candlesAfter = [candle(1300, 105, 106, 104, 105)];
+
+    expect(resolveOutcome(signal, candlesAfter)).toEqual({ signalId: 'A:5m:1000', outcome: 'timeout' });
+  });
+
+  it('микро-движение в сторону сделки (меньше любого спреда) — это win, а не тайм-аут', () => {
+    const signal = makeSignal({
+      id: 'A:5m:1000', time: 1000, direction: 'buy',
+      entryPrice: 100, barsToResolve: 5,
+    });
+    const candlesAfter = [candle(1300, 100.00001, 100.1, 99.9, 100)];
+
+    expect(resolveOutcome(signal, candlesAfter)).toEqual({ signalId: 'A:5m:1000', outcome: 'win' });
   });
 
   it('returns null when the signal is not pending (already resolved)', () => {

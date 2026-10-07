@@ -225,6 +225,21 @@ export const LOGIC_CHANGE_LOG: LogicChangeRecord[] = [
     ],
     frozenAtMs: Date.UTC(2026, 9, 4),
   },
+  {
+    id: 'timeout-open-close-only-20261007',
+    date: '2026-10-07',
+    description:
+      'Правило тайм-аута (решение владельца): тайм-аут/тай только при точном равенстве open свечи входа и close свечи экспирации. Убрана зона «движение <= спред → тайм-аут» (apply-spread.ts, resolveTrade, resolveBinaryOutcome); resolveOutcome и backtest считают от open свечи входа; принудительный тайм-аут при смене инструмента удалён (сигналы остаются pending). Версия алгоритма occurrences 18→19.',
+    filesChanged: [
+      'src/decision/apply-spread.ts',
+      'src/decision/outcome-scheduler.ts',
+      'src/stores/useDemoAccountStore.ts',
+      'src/stores/useTickStore.ts',
+      'backtest/horizon-audit.ts',
+      'backtest/audit-version.ts',
+    ],
+    frozenAtMs: Date.UTC(2026, 9, 7),
+  },
 ];
 
 /**

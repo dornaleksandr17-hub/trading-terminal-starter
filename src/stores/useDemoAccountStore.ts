@@ -195,32 +195,17 @@ function resolveTrade(
       : closePrice < entryPrice;
   const isTie = closePrice === entryPrice;
 
-  // BUGFIX (аудит 2026-09-13, "спред учтён в калибровке, но не в
-  // балансе"): applySpreadToOutcome() в decision/apply-spread.ts уже давно
-  // переразмечает исход 'win' в 'timeout' для калибровочной модели, если
-  // реальное движение цены не превышает спред инструмента — то есть
-  // движение находится в пределах цены исполнения и не является настоящим
-  // направленным выигрышем. Эта поправка раньше применялась ТОЛЬКО к
-  // тренировочной метке для калибровки, а баланс демо-счёта считал win по
-  // голому "closePrice > entryPrice", даже когда движение было на доли
-  // цента/пункта — заведомо в пределах спреда. Результат: демо-баланс
-  // систематически оптимистичнее того, что показывает калибровка на тех
-  // же данных, и оптимистичнее реального исполнения. Теперь пограничный
-  // win (|closePrice - entryPrice| <= trade.spread) трактуется так же, как
-  // и в калибровке — не как настоящая победа, а как "тай": ставка
-  // возвращается, серия мартингейла не двигается. trade.spread может быть
-  // null (спред не был оценён на момент сигнала) — в этом случае поведение
-  // не меняется.
-  const move = Math.abs(closePrice - entryPrice);
-  const isWithinSpread = trade.spread != null && trade.spread > 0 && move <= trade.spread;
-  const isWin = rawIsWin && !isWithinSpread;
+  // Правило тайм-аута (решение владельца, 2026-10): тай — ТОЛЬКО при точном
+  // равенстве closePrice === entryPrice. Движение в пределах спреда больше
+  // не превращает победу в тай (раньше: move <= trade.spread → pnl = 0).
+  const isWin = rawIsWin;
 
   let pnl: number;
   let balanceAfter = 0;
   let newMartingale: InstrumentMartingaleState = { ...currentState };
   let seriesReset: 'win' | 'loss_final_stage' | null = null;
 
-  if (isTie || (rawIsWin && isWithinSpread)) {
+  if (isTie) {
     pnl = 0;
     balanceAfter = round2(/* balance + */ trade.stake);
     newMartingale = { ...currentState };

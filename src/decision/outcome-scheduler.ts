@@ -39,11 +39,17 @@ export function resolveOutcome(
   if (candlesAfterSignal.length < expiryBars) return null;
 
   const expiryCandle = candlesAfterSignal[expiryBars - 1];
+  // Правило тайм-аута (решение владельца, 2026-10): точкой отсчёта служит
+  // цена ОТКРЫТИЯ свечи входа (первая свеча после сигнальной — тот же вход,
+  // что у демо-сделки в useDemoAccountStore), а не signal.entryPrice
+  // (close сигнальной свечи ± spread/2). Тайм-аут — только open === close;
+  // любое другое значение — win (buy/sell по направлению) или loss.
+  const entryPrice = candlesAfterSignal[0].open;
   const isBuy = signal.direction === 'buy';
   const isWin = isBuy
-    ? expiryCandle.close > signal.entryPrice
-    : expiryCandle.close < signal.entryPrice;
-  const isTie = expiryCandle.close === signal.entryPrice;
+    ? expiryCandle.close > entryPrice
+    : expiryCandle.close < entryPrice;
+  const isTie = expiryCandle.close === entryPrice;
 
   return {
     signalId: signal.id,
