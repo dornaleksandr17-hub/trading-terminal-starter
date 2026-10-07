@@ -11,6 +11,7 @@ import { PredictionAccuracyBadge } from '@/ui/PredictionAccuracyBadge';
 import { Boxes } from 'lucide-react';
 import { useState, lazy, Suspense } from 'react';
 import { AiAnalysisButton } from '@/ui/AiAnalysisButton';
+import { MessagesSquare } from 'lucide-react';
 import { DemoAccountBadge } from '@/ui/DemoAccountBadge';
 import { CandleTimer } from '@/ui/CandleTimer';
 
@@ -119,6 +120,14 @@ export function Header({ onAiAnalyze, aiLoading }: HeaderProps) {
           </div>
 
           <AiAnalysisButton onClick={onAiAnalyze} loading={aiLoading} />
+          <a
+            href="/analyst"
+            className="flex items-center gap-1.5 rounded-lg bg-secondary-700/30 px-2.5 py-2 text-2xs font-semibold text-secondary-400 transition hover:bg-secondary-700/50 sm:py-1.5"
+            title="ИИ-аналитик истории сигналов"
+          >
+            <MessagesSquare size={12} />
+            Аналитик
+          </a>
 
           <button
             onClick={() => setStrategiesOpen(true)}
