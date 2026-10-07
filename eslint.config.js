@@ -10,7 +10,7 @@ export default tseslint.config(
   // там незамеченными жили look-ahead в computeIndicatorsSeries и
   // объявление на нулевой колонке внутри функции.
   // 'debug-harmonic-probe.ts' убран: файла в репозитории нет.
-  { ignores: ['.output', '.tanstack', 'src/routeTree.gen.ts', 'src/components/ui', 'dist', 'coverage', 'playwright-report', 'test-results', 'e2e', 'playwright.config.ts', 'supabase/functions'] },
+  { ignores: ['.output', '.tanstack', 'src/routeTree.gen.ts', 'src/components/ui', 'src/components/ai-elements', 'dist', 'coverage', 'playwright-report', 'test-results', 'e2e', 'playwright.config.ts', 'supabase/functions'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommendedTypeChecked],
     files: ['**/*.{ts,tsx}'],

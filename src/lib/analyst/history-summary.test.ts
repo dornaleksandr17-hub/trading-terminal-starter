@@ -12,7 +12,7 @@ function sig(p: Partial<Signal>): Signal {
     engineConfigSnapshot: {} as Signal['engineConfigSnapshot'], chartContext: {} as Signal['chartContext'],
     marketContext: { regime: 'trend', structure: { trend: 'up', bos: false, choch: false } as Signal['marketContext']['structure'], session: 'london' },
     ...p,
-  } as Signal;
+  };
 }
 
 describe('summarizeSignalHistory', () => {
