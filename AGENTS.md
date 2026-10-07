@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- ИИ-аналитик (/analyst): только аналитика, сигналы не генерирует; контекст = выжимка локальной истории (src/lib/analyst/history-summary.ts, считается в браузере) + src/lib/analyst/backtest-context.gen.json (генерируется `npm run backtest:gen-analyst-context` из backtest/output) — чтобы полные отчёты не попадали в серверный бандл.
