@@ -11,7 +11,7 @@ import { PredictionAccuracyBadge } from '@/ui/PredictionAccuracyBadge';
 import { Boxes } from 'lucide-react';
 import { useState, lazy, Suspense } from 'react';
 import { AiAnalysisButton } from '@/ui/AiAnalysisButton';
-import { MessagesSquare } from 'lucide-react';
+import { MessagesSquare, NotebookPen } from 'lucide-react';
 import { DemoAccountBadge } from '@/ui/DemoAccountBadge';
 import { CandleTimer } from '@/ui/CandleTimer';
 
@@ -127,6 +127,14 @@ export function Header({ onAiAnalyze, aiLoading }: HeaderProps) {
           >
             <MessagesSquare size={12} />
             Аналитик
+          </a>
+          <a
+            href="/journal"
+            className="flex items-center gap-1.5 rounded-lg bg-base-800 px-2.5 py-2 text-2xs font-semibold text-base-300 transition hover:bg-base-700 sm:py-1.5"
+            title="Журнал форвард-тестов"
+          >
+            <NotebookPen size={12} />
+            <span className="hidden sm:inline">Журнал</span>
           </a>
 
           <button
