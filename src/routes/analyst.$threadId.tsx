@@ -1,4 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { NotebookPen } from "lucide-react";
+import { addHypothesis } from "@/lib/journal/journal";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -37,6 +39,7 @@ function ThreadChat({ threadId }: { threadId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const navigate = useNavigate();
 
   const transport = useMemo(
     () =>
@@ -116,6 +119,19 @@ function ThreadChat({ threadId }: { threadId: string }) {
                       );
                     return null;
                   })}
+                  {m.role === "assistant" && !(busy && m.id === messages[messages.length - 1]?.id) && (
+                    <button
+                      onClick={() => {
+                        const text = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("").trim();
+                        if (!text) return;
+                        addHypothesis({ text, sourceThreadId: threadId });
+                        void navigate({ to: "/journal" });
+                      }}
+                      className="mt-1 flex w-fit items-center gap-1 rounded border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+                    >
+                      <NotebookPen size={10} /> В журнал
+                    </button>
+                  )}
                 </MessageContent>
               </Message>
             ))
