@@ -38,8 +38,8 @@ const EVT = 'forward-journal-changed';
 export function loadHypotheses(): Hypothesis[] {
   if (typeof window === 'undefined') return [];
   try {
-    const v = JSON.parse(localStorage.getItem(KEY) ?? '[]');
-    return Array.isArray(v) ? v : [];
+    const v: unknown = JSON.parse(localStorage.getItem(KEY) ?? "[]");
+    return Array.isArray(v) ? (v as Hypothesis[]) : [];
   } catch {
     return [];
   }
