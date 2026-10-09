@@ -17,7 +17,7 @@ const esc = (v: string | number | null | undefined): string => {
 
 export function toCsv(header: string[], rows: (string | number | null | undefined)[][]): string {
   const lines = [header, ...rows].map((r) => r.map(esc).join(';'));
-  return '﻿' + lines.join('\r\n');
+  return '﻿' + lines.join('\r\n'); // ﻿ = BOM для Excel
 }
 
 export function downloadCsv(filename: string, csv: string) {
