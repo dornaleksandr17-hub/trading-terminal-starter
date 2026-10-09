@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Lock, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Download, Lock, Plus, Trash2 } from "lucide-react";
 import { useAnalyticsStore } from "@/stores/useAnalyticsStore";
 import {
   addHypothesis, backtestFor, BREAKEVEN_PCT, comparePeriod, deleteHypothesis, hypothesisSignals,
   JOURNAL_EVENT, judge, loadHypotheses, stats, updateHypothesis,
   type GroupBy, type Hypothesis, type HypothesisConditions,
 } from "@/lib/journal/journal";
+import { comparisonCsv, downloadCsv, exportNames, hypothesesCsv, outcomesCsv } from "@/lib/journal/export";
 import type { Signal } from "@/types/domain";
 
 export const Route = createFileRoute("/journal")({
