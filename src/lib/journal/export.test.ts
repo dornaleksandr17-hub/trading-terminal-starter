@@ -5,7 +5,7 @@ import type { Signal } from '@/types/domain';
 const sig = (over: Partial<Signal>): Signal => ({
   id: 's1', symbolId: 'EURUSD', timeframe: '1m', direction: 'buy',
   pattern: 'harmonic-pattern', time: 1_700_000_000, outcome: 'win',
-  strength: 'strong', probability: 0.6,
+  strength: 'strong', calibratedProbability: 0.6,
   marketContext: { session: 'london' },
   ...over,
 } as unknown as Signal);
