@@ -60,11 +60,11 @@ export function hypothesesCsv(list: Hypothesis[], signals: Signal[]): string {
 export function outcomesCsv(signals: Signal[]): string {
   const sorted = [...signals].sort((a, b) => signalMs(a) - signalMs(b));
   return toCsv(
-    ['время', 'пара', 'таймфрейм', 'паттерн', 'направление', 'сила', 'сессия', 'исход', 'вероятность_%'],
+    ['время', 'пара', 'таймфрейм', 'паттерн', 'направление', 'сила', 'сессия', 'исход', 'уверенность_%'],
     sorted.map((s) => [
       new Date(signalMs(s)).toISOString(), s.symbolId, s.timeframe, s.pattern ?? '', s.direction,
       s.strength ?? '', s.marketContext?.session ?? '', s.outcome ?? 'pending',
-      s.probability != null ? (s.probability * 100).toFixed(1) : '',
+      s.confidence != null ? (s.confidence * 100).toFixed(1) : '',
     ]),
   );
 }
