@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Lock, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Download, Lock, Plus, Trash2 } from "lucide-react";
 import { useAnalyticsStore } from "@/stores/useAnalyticsStore";
 import {
   addHypothesis, backtestFor, BREAKEVEN_PCT, comparePeriod, deleteHypothesis, hypothesisSignals,
   JOURNAL_EVENT, judge, loadHypotheses, stats, updateHypothesis,
   type GroupBy, type Hypothesis, type HypothesisConditions,
 } from "@/lib/journal/journal";
+import { comparisonCsv, downloadCsv, exportNames, hypothesesCsv, outcomesCsv } from "@/lib/journal/export";
 import type { Signal } from "@/types/domain";
 
 export const Route = createFileRoute("/journal")({
@@ -71,6 +72,18 @@ function JournalPage() {
           <ArrowLeft size={16} />
         </Link>
         <h1 className="flex-1 text-sm font-semibold">Журнал форвард-тестов</h1>
+        <button
+          onClick={() => downloadCsv(exportNames.hypotheses(), hypothesesCsv(list, signals))}
+          className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <Download size={12} /> Гипотезы CSV
+        </button>
+        <button
+          onClick={() => downloadCsv(exportNames.outcomes(), outcomesCsv(signals))}
+          className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <Download size={12} /> Исходы CSV
+        </button>
         <Link to="/analyst" className="text-xs text-muted-foreground hover:text-foreground">ИИ-аналитик →</Link>
       </header>
 
@@ -248,6 +261,13 @@ function PeriodCompare({ signals }: { signals: Signal[] }) {
           <option value="pattern">По паттернам</option>
           <option value="strategy">По стратегиям (паттерн + ТФ)</option>
         </select>
+        <button
+          disabled={rows.length === 0}
+          onClick={() => downloadCsv(exportNames.comparison(), comparisonCsv(rows))}
+          className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
+        >
+          <Download size={12} /> Сравнение CSV
+        </button>
       </div>
       {minTrades < 30 && <p className="text-[10px] text-warning-400">Меньше 30 сделок в группе — в основном шум.</p>}
       {rows.length === 0 ? (
