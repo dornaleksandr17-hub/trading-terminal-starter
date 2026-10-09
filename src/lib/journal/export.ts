@@ -64,7 +64,7 @@ export function outcomesCsv(signals: Signal[]): string {
     sorted.map((s) => [
       new Date(signalMs(s)).toISOString(), s.symbolId, s.timeframe, s.pattern ?? '', s.direction,
       s.strength ?? '', s.marketContext?.session ?? '', s.outcome ?? 'pending',
-      s.confidence != null ? (s.confidence * 100).toFixed(1) : '',
+      s.calibratedProbability != null ? (s.calibratedProbability * 100).toFixed(1) : '',
     ]),
   );
 }
